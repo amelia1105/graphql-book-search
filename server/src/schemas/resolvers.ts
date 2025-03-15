@@ -1,17 +1,5 @@
-import User from '../models/User.js';
+import User, { UserDocument } from '../models/User.js';
 import { signToken, AuthenticationError } from '../utils/auth.js';
-
-interface User {
-  _id: string;
-  username: string;
-  email: string;
-  bookCount: number;
-  savedBooks: string[];
-}
-
-interface UserArgs {
-  userId: string;
-}
 
 interface AddUserArgs {
   input:{
@@ -30,28 +18,30 @@ interface RemoveBookArgs {
 }
 
 interface Context {
-  user?: User;
+  user?: UserDocument;
 }
 
 const resolvers = {
   Query: {
-    user: async (_parent: any, { userId }: UserArgs): Promise<User | null> => {
-      return await User.findOne({ _id: userId });
-    },
-    me: async (_parent: any, _args: any, context: Context): Promise<User | null> => {
+    me: async (_parent: any, _args: any, context: Context): Promise<UserDocument | null> => {
       if (context.user) {
-        return await User.findOne({ _id: context.user._id });
+        const user = await User.findOne({ _id: context.user._id });
+        if (user) {
+          user.id = user.id.toString();
+        }
+        return user;
       }
       throw new AuthenticationError('Not authenticated');
     },
   },
   Mutation: {
-    addUser: async (_parent: any, { input }: AddUserArgs): Promise<{ token: string; user: User }> => {
+    addUser: async (_parent: any, { input }: AddUserArgs): Promise<{ token: string; user: UserDocument }> => {
       const user = await User.create({ ...input });
-      const token = signToken(user);
+      user.id = user.id.toString();
+      const token = signToken(user.username, user.password, user.id);
       return { token, user };
     },
-    login: async (_parent: any, { email, password }: { email: string; password: string }): Promise<{ token: string; user: User }> => {
+    login: async (_parent: any, { email, password }: { email: string; password: string }): Promise<{ token: string; user: UserDocument }> => {
       const user = await User.findOne({ email });
       if (!user) {
         throw new AuthenticationError('Invalid credentials');
@@ -60,12 +50,13 @@ const resolvers = {
       if (!correctPw) {
         throw new AuthenticationError('Invalid credentials');
       }
-      const token = signToken(user);
+      user.id = user.id.toString();
+      const token = signToken(user.username, user.password, user.id);
       return { token, user };
     },
-    saveBook: async (_parent: any, { bookId }: AddBookArgs, context: Context): Promise<User | null> => {
+    saveBook: async (_parent: any, { bookId }: AddBookArgs, context: Context): Promise<UserDocument | null> => {
       if (context.user) {
-        return await User.findOneAndUpdate(
+        const user = await User.findOneAndUpdate(
           { _id: context.user._id },
           {
             $addToSet: { savedBooks: { bookId } },
@@ -75,16 +66,24 @@ const resolvers = {
             runValidators: true,
           }
         );
+        if (user) {
+          user.id = user.id.toString();
+        }
+        return user;
       }
       throw new AuthenticationError('Not authenticated');
     },
-    removeBook: async (_parent: any, { bookId }: RemoveBookArgs, context: Context): Promise<User | null> => {
+    removeBook: async (_parent: any, { bookId }: RemoveBookArgs, context: Context): Promise<UserDocument | null> => {
       if (context.user) {
-        return await User.findOneAndUpdate(
+        const user = await User.findOneAndUpdate(
           { _id: context.user._id },
           { $pull: { savedBooks: { bookId } } },
           { new: true }
         );
+        if (user) {
+          user.id = user.id.toString();
+        }
+        return user;
       }
       throw new AuthenticationError('Not authenticated');
     },
