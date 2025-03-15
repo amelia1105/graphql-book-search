@@ -46,7 +46,7 @@ const resolvers = {
     },
   },
   Mutation: {
-    createUser: async (_parent: any, { input }: AddUserArgs): Promise<{ token: string; user: User }> => {
+    addUser: async (_parent: any, { input }: AddUserArgs): Promise<{ token: string; user: User }> => {
       const user = await User.create({ ...input });
       const token = signToken(user);
       return { token, user };
@@ -78,7 +78,7 @@ const resolvers = {
       }
       throw new AuthenticationError('Not authenticated');
     },
-    deleteBook: async (_parent: any, { bookId }: RemoveBookArgs, context: Context): Promise<User | null> => {
+    removeBook: async (_parent: any, { bookId }: RemoveBookArgs, context: Context): Promise<User | null> => {
       if (context.user) {
         return await User.findOneAndUpdate(
           { _id: context.user._id },
