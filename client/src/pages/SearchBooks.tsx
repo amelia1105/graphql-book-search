@@ -79,7 +79,7 @@ const SearchBooks = () => {
 
     try {
       const { data } = await saveBookMutation({
-        variables: { bookData: bookToSave },
+        variables: { book: bookToSave },
       });
   
       if (data) {
@@ -133,7 +133,7 @@ const SearchBooks = () => {
                   ) : null}
                   <Card.Body>
                     <Card.Title>{book.title}</Card.Title>
-                    <p className='small'>Authors: {book.authors}</p>
+                    <p className='small'>Author(s): {book.authors}</p>
                     <Card.Text>{book.description}</Card.Text>
                     {Auth.loggedIn() && (
                       <Button
@@ -141,8 +141,8 @@ const SearchBooks = () => {
                         className='btn-block btn-info'
                         onClick={() => handleSaveBook(book.bookId)}>
                         {savedBookIds?.some((savedBookId: string) => savedBookId === book.bookId)
-                          ? 'This book has already been saved!'
-                          : 'Save this Book!'}
+                          ? 'This book is on your saved list!'
+                          : 'Save this Book'}
                       </Button>
                     )}
                   </Card.Body>
