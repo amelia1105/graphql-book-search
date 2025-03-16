@@ -15,6 +15,7 @@ import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
 import type { Book } from '../models/Book';
 import type { GoogleAPIBook } from '../models/GoogleAPIBook';
 import { SAVE_BOOK } from '../utils/mutations';
+import { useMutation } from '@apollo/client';
 
 const SearchBooks = () => {
   const [saveBookMutation] = useMutation(SAVE_BOOK);
@@ -156,7 +157,3 @@ const SearchBooks = () => {
 };
 
 export default SearchBooks;
-function useMutation(SAVE_BOOK: any): [any] {
-  throw new Error('Function not implemented.');
-}
-

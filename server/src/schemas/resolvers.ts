@@ -9,11 +9,6 @@ interface RemoveBookArgs {
   bookId: string;
 }
 
-interface Auth {
-  token: string;
-  user: UserDocument;
-}
-
 interface Context {
   user?: UserDocument;
 }
@@ -22,50 +17,39 @@ const resolvers = {
   Query: {
     me: async (_parent: any, _args: any, context: Context): Promise<UserDocument | null> => {
       if (context.user) {
-        const user = await User.findOne({ _id: context.user._id });
-        if (user) {
-          user.id = user.id.toString();
-        }
+        const user = await User.findOne({ _id: context.user._id }).select('-__v -password');
         return user;
       }
-      throw new AuthenticationError('Not authenticated');
+      throw new AuthenticationError('User not authenticated');
     },
   },
   Mutation: {
-    addUser: async (_parent: any, { username, email, password }: { username: string, email: string, password: string }): Promise<Auth> => {
+    addUser: async (_parent: any, args: any): Promise<{ token: string, user: UserDocument }> => {
         // Check if the username already exists
-        const existingUser = await User.findOne({ username });
+        const existingUser = await User.findOne({ username: args.username });
         if (existingUser) {
-          throw new Error('Username is already taken');
+          throw new AuthenticationError('Username already exists');
         }
-      const user = await User.create({ username, email, password });
-      const token = signToken(user.username, user.email, (user as UserDocument).id.toString());
+      const user = await User.create(args);
+      const token = signToken(user.username, user.email, user._id);
       return { token, user };
     },
     login: async (_parent: any, { email, password }: { email: string; password: string }): Promise<{ token: string; user: UserDocument }> => {
       const user = await User.findOne({ email });
-      if (!user) {
+      if (!user || !(await user.isCorrectPassword(password))) {
         throw new AuthenticationError('Invalid credentials');
       }
 
-      const correctPw = await user.isCorrectPassword(password);
-      if (!correctPw) {
-        throw new AuthenticationError('Invalid credentials');
-      }
-
-      const token = signToken(user.username, user.email, (user as UserDocument).id.toString());
+      const token = signToken(user.username, user.email, user._id);
       return { token, user };
     },
-    saveBook: async (_parent: any, { bookId }: AddBookArgs, context: Context): Promise<UserDocument | null> => {
+    saveBook: async (_parent: any, { bookData }: { bookData: AddBookArgs }, context: Context): Promise<UserDocument | null> => {
       if (context.user) {
-        const user = await User.findOneAndUpdate(
+        const user = await User.findByIdAndUpdate(
           { _id: context.user._id },
-          { $addToSet: { savedBooks: bookId } },
-          { new: true, runValidators: true }
+          { $push: { savedBooks: bookData } },
+          { new: true }
         );
-        if (user) {
-          user.id = user.id.toString();
-        }
         return user;
       }
       throw new AuthenticationError('Not authenticated');
@@ -77,9 +61,6 @@ const resolvers = {
           { $pull: { savedBooks: bookId } },
           { new: true }
         );
-        if (user) {
-          user.id = user.id.toString();
-        }
         return user;
       }
       throw new AuthenticationError('Not authenticated');

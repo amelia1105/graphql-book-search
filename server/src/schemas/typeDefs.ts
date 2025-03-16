@@ -1,14 +1,14 @@
 const typeDefs = `
   type User {
-    id: ID
-    username: String
+    id: ID!
+    username: String!
     email: String
     bookCount: Int
     savedBooks: [Book]
   }
 
   type Book {
-    bookId: String
+    bookId: ID!
     authors: [String]
     description: String
     title: String
@@ -17,15 +17,15 @@ const typeDefs = `
   }
   
   type Auth {
-    token: String
+    token: ID!
     user: User
   }
 
   input BookInput {
-    authors: [String!]
+    authors: [String]
     description: String
     title: String!
-    bookId: ID
+    bookId: String!
     image: String
     link: String
   }

@@ -4,43 +4,33 @@ import { Container, Card, Button, Row, Col } from 'react-bootstrap';
 import { removeBookId } from '../utils/localStorage';
 import { GET_ME } from '../utils/queries';
 import { REMOVE_BOOK } from '../utils/mutations';
+import type { User } from '../models/User';
+// import type { Book } from '../models/Book';
+
+import Auth from '../utils/auth';
 
 const SavedBooks = () => {
   const { loading, data } = useQuery(GET_ME);
-  const userData = data?.me || { savedBooks: [] };
-  const [removeBook] = useMutation(REMOVE_BOOK, {
-    update(cache, { data }) {
-      const existingData = cache.readQuery({ query: GET_ME }) || { me: { savedBooks: [] } };
-  
-      if (existingData && data?.removeBook) {
-        cache.writeQuery({
-          query: GET_ME,
-          data: {
-            me: {
-              ...existingData.me,
-              savedBooks: existingData.me.savedBooks.filter(
-                (book) => book.bookId !== data.removeBook.bookId
-              ),
-            },
-          },
-        });
-      }
-    },
-  });
-  
+  const [removeBook] = useMutation(REMOVE_BOOK);
+
+  const userData: User = data?.me || {}; 
 
   // create function that accepts the book's mongo _id value as param and deletes the book from the database
   const handleDeleteBook = async (bookId: string) => {
+    const token = Auth.loggedIn() ? Auth.getToken() : null;
+
+    if (!token) {
+      return false;
+    }
+
     try {
-      const { data } = await removeBook({
-        variables: { bookId },
+      await removeBook({
+        variables: { bookId }
       });
-  
-      if (data) {
-        removeBookId(bookId);
-      }
+
+    removeBookId(bookId);
     } catch (err) {
-      console.error('Error deleting book:', err);
+      console.error(err);
     }
   };
 
