@@ -7,6 +7,7 @@ import { expressMiddleware } from '@apollo/server/express4';
 import { typeDefs, resolvers } from './schemas/index.js';
 import { authenticateToken } from './utils/auth.js';
 import cors from 'cors';
+import { fileURLToPath } from 'url';
 
 const server = new ApolloServer({
   typeDefs,
@@ -17,7 +18,7 @@ const startApolloServer = async () => {
   await server.start();
   await db();
 
-  const PORT = process.env.PORT || 3001;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
   const app = express();
 
   app.use(cors());
@@ -31,6 +32,9 @@ const startApolloServer = async () => {
   ));
 
   if (process.env.NODE_ENV === 'production') {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
     app.use(express.static(path.join(__dirname, '../client/dist')));
 
     app.get('*', (_req: Request, res: Response) => {
@@ -38,7 +42,7 @@ const startApolloServer = async () => {
     });
   }
 
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`API server running on port ${PORT}`);
     console.log(`Use GraphQL at http://localhost:${PORT}/graphql`);
   });
