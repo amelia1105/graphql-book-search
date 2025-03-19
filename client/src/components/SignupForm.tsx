@@ -16,6 +16,8 @@ const SignupForm = ({}: { handleModalClose: () => void }) => {
   const [showAlert, setShowAlert] = useState(false);
   // Mutation to add a new user
   const [addUser, { error }] = useMutation(ADD_USER);
+  // Set error message
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Handle input changes and update the form data state
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -46,9 +48,24 @@ const SignupForm = ({}: { handleModalClose: () => void }) => {
       }
     } catch (err) {
       // Log the error and show the alert
-      console.error(err);
-      setShowAlert(true);
-    }
+        console.error(err);
+        setShowAlert(true);
+
+        // Set the error message based on the error type
+        if (err instanceof Error && (err as any)?.graphQLErrors?.length > 0) {
+          const errorMessage = (err as any).graphQLErrors[0]?.message;
+    
+          if (errorMessage.includes('Username already exists')) {
+            setErrorMessage('This username is already taken.');
+          } else if (errorMessage.includes('Invalid email format')) {
+            setErrorMessage('Please enter a valid email address.');
+          } else {
+            setErrorMessage('Something went wrong with your signup.');
+          }
+        } else {
+          setErrorMessage('Something went wrong with your signup.');
+        }
+      }
 
     // Reset the form data after submission
     setUserFormData({
@@ -65,8 +82,9 @@ const SignupForm = ({}: { handleModalClose: () => void }) => {
       <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
         {/* Show alert if there is an error */}
         <Alert dismissible onClose={() => setShowAlert(false)} show={showAlert || !!error} variant='danger'>
-          Something went wrong with your signup!
+          {errorMessage}
         </Alert>
+
 
         {/* Username input field */}
         <Form.Group className='mb-3'>

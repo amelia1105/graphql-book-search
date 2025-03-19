@@ -71,7 +71,7 @@ const SavedBooks = () => {
           {/* Loop through the saved books and render each as a card */}
           {userData.savedBooks?.map((book) => {
             return (
-              <Col key={book.bookId} md='4'>
+              <Col key={book.bookId} md='4' className="mb-4">
                 <Card border='dark'>
                   {/* Display the book's image if available */}
                   {book.image ? (
