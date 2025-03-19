@@ -55,7 +55,12 @@ const resolvers = {
       // Check if the username already exists
       const existingUser = await User.findOne({ username: args.username });
       if (existingUser) {
-        throw new AuthenticationError('Username already exists');
+       throw new AuthenticationError('Username already exists');
+      }
+      // Check if the email is valid
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(args.email)) {
+        throw new AuthenticationError('Invalid email format');
       }
       // Create a new user and generate a token
       const user = await User.create(args);
@@ -64,6 +69,12 @@ const resolvers = {
     },
     // Resolver for logging in a user
     login: async (_parent: any, { email, password }: { email: string; password: string }): Promise<{ token: string; user: UserDocument }> => {
+      // Check if the email is valid
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new AuthenticationError('Invalid email format');
+      }
+
       // Find the user by email and validate the password
       const user = await User.findOne({ email });
       if (!user || !(await user.isCorrectPassword(password))) {

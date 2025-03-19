@@ -16,6 +16,8 @@ const LoginForm = ({}: { handleModalClose: () => void }) => {
   const [showAlert, setShowAlert] = useState(false);
   // Apollo mutation hook for user login
   const [loginUser, { error }] = useMutation(LOGIN_USER);
+  // Set error message
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Handler for input field changes
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -46,8 +48,21 @@ const LoginForm = ({}: { handleModalClose: () => void }) => {
       }
     } catch (err) {
       // Log error and show alert if login fails
-      console.error('Login error:', err);
-      setShowAlert(true);
+        console.error('Login error:', err);
+        setShowAlert(true);
+
+      // Set error message based on error type
+      if (err instanceof Error && (err as any)?.graphQLErrors?.length > 0) {
+        const errorMessage = (err as any).graphQLErrors[0]?.message;
+  
+        if (errorMessage.includes('Invalid email format')) {
+          setErrorMessage('Invalid email address.');
+        } else {
+          setErrorMessage('Invalid login.');
+        }
+      } else {
+        setErrorMessage('Something went wrong with your login.');
+      }
     }
 
     // Reset form data after submission
@@ -63,7 +78,7 @@ const LoginForm = ({}: { handleModalClose: () => void }) => {
       <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
         {/* Alert for login errors */}
         <Alert dismissible onClose={() => setShowAlert(false)} show={showAlert || !!error} variant='danger'>
-          Something went wrong with your login credentials!
+          {errorMessage}
         </Alert>
         {/* Email input field */}
         <Form.Group className='mb-3'>
